@@ -1,0 +1,25 @@
+name: Backup MongoDB
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Install MongoDB tools
+        run: sudo apt update && sudo apt install mongodb-clients -y
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.R2_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.R2_SECRET_KEY }}
+          aws-region: auto
+
+      - name: Run Backup Script
+        run: bash backup.sh
