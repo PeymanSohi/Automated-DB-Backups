@@ -1,21 +1,18 @@
 #!/bin/bash
 
-TIMESTAMP=$(date +"%Y-%m-%d_%H-%M")
-BACKUP_NAME="mongo_backup_$TIMESTAMP"
-DUMP_DIR="/tmp/$BACKUP_NAME"
-ARCHIVE="/tmp/$BACKUP_NAME.tar.gz"
-BUCKET="mongo-backups"
+set -e
 
-# Dump database
-mongodump --out $DUMP_DIR
+source .env
 
-# Compress dump
-tar -czf $ARCHIVE -C /tmp $BACKUP_NAME
+TIMESTAMP=$(date +"%Y%m%d%H%M%S")
+BACKUP_NAME="mongo-backup-$TIMESTAMP"
+ARCHIVE_NAME="$BACKUP_NAME.tar.gz"
 
-# Upload to Cloudflare R2
-aws s3 cp $ARCHIVE s3://$BUCKET/ --profile r2
+mongodump --host $MONGO_HOST --port $MONGO_PORT --db $MONGO_DB --out $BACKUP_NAME
+tar -czf $ARCHIVE_NAME $BACKUP_NAME
 
-# Clean up
-rm -rf $DUMP_DIR $ARCHIVE
+aws s3 cp $ARCHIVE_NAME s3://$R2_BUCKET_NAME/ --endpoint-url $R2_ENDPOINT --profile $R2_PROFILE
 
-echo "✅ Backup $BACKUP_NAME uploaded to R2"
+rm -rf $BACKUP_NAME $ARCHIVE_NAME
+
+echo "Backup $ARCHIVE_NAME uploaded to R2."
